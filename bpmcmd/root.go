@@ -1,0 +1,207 @@
+package bpmcmd
+
+import (
+	"bufio"
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/brendoncarroll/stdctx/logctx"
+	"github.com/spf13/cobra"
+
+	"github.com/blobcache/bpm"
+	"github.com/blobcache/bpm/bpmmd"
+	"github.com/blobcache/bpm/internal/iter"
+	"github.com/blobcache/bpm/sources"
+)
+
+var (
+	repo *bpm.Repo
+)
+
+// NewCmd creates a new root command
+func NewCmd(ctx context.Context) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "bpm",
+		Short: "bpm is a package manager",
+	}
+	for _, child := range []*cobra.Command{
+		// repo
+		newInitCmd(ctx),
+		newStatusCmd(ctx),
+
+		newSearchCmd(ctx),
+		newInstallCmd(ctx),
+		newGetCmd(ctx),
+
+		// type specific
+		newAssetCmd(ctx),
+		newDeployCmd(ctx),
+	} {
+		c.AddCommand(child)
+	}
+	return c
+}
+
+func newInitCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:   "init",
+		Short: "initializes a repository in the current directory",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var p string
+			if len(args) > 0 {
+				var err error
+				p, err = filepath.Abs(args[0])
+				if err != nil {
+					return err
+				}
+			} else {
+				var err error
+				p, err = os.Getwd()
+				if err != nil {
+					return err
+				}
+			}
+			return bpm.Init(ctx, p)
+		},
+	}
+}
+
+func newStatusCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:   "status",
+		Short: "prints status information",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			p := getRepoPath()
+			return loadRepo(ctx, p)
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			bw := bufio.NewWriter(cmd.OutOrStdout())
+			fmt.Fprintln(bw, repo)
+			return bw.Flush()
+		},
+	}
+}
+
+func newGetCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:   "get <source> <id>",
+		Short: "get gets an asset from a source by id",
+		Args:  cobra.ExactArgs(2),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			p := getRepoPath()
+			return loadRepo(ctx, p)
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			sourceURL := args[0]
+			idstr := args[1]
+			aid, err := repo.PullAsset(ctx, sourceURL, idstr)
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), aid)
+			return err
+		},
+	}
+}
+
+func newInstallCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:   "install <name>",
+		Short: "install takes a source and query, resolves it to a package and then deploys it",
+		Args:  cobra.ExactArgs(3),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			p := getRepoPath()
+			return loadRepo(ctx, p)
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path := args[0]
+			sourceURL := args[1]
+			idstr := args[2]
+			assetID, err := repo.PullAsset(ctx, sourceURL, idstr)
+			if err != nil {
+				return err
+			}
+
+			current, err := repo.GetDeploy(ctx, 0)
+			if err != nil {
+				return err
+			}
+			assets := map[string]uint64{}
+			if current != nil {
+				for p, a := range current.Assets {
+					assets[p] = a.ID
+				}
+			}
+			assets[path] = assetID
+
+			did, err := repo.Deploy(ctx, assets)
+			if err != nil {
+				return err
+			}
+			fmt.Println(did)
+			return nil
+		},
+	}
+}
+
+func loadRepo(ctx context.Context, p string) error {
+	r, err := bpm.Open(p)
+	if err != nil {
+		return err
+	}
+	logctx.Infof(ctx, "loaded repo at %s", p)
+	repo = r
+	return nil
+}
+
+func getRepoPath() string {
+	p, ok := os.LookupEnv("BPM_PATH")
+	if ok {
+		return p
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "./" // current directory
+	}
+	return filepath.Join(homeDir, "pkg")
+}
+
+func newSearchCmd(ctx context.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:   "search",
+		Short: "search for a package",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var src sources.Source
+			if len(args) > 0 {
+				var err error
+				src, err = bpm.MakeSource(args[0])
+				if err != nil {
+					return err
+				}
+			} else {
+				src = repo.LocalSource()
+			}
+			it, err := src.Search(ctx, bpm.Query{})
+			if err != nil {
+				return err
+			}
+			var q bpmmd.Query
+			it = iter.NewFilter(it, func(r *sources.Result) bool {
+				return q.Where.Matches(r.Labels)
+			})
+			bufw := bufio.NewWriter(cmd.OutOrStdout())
+			fmtStr := "%-20s %s\n"
+			fmt.Fprintf(bufw, fmtStr, "ID", "LABELS")
+			if err := iter.ForEachBuf(ctx, it, 1000, func(x *sources.Result) error {
+				_, err := fmt.Fprintf(bufw, fmtStr, x.ID, x.Labels)
+				return err
+			}); err != nil {
+				return err
+			}
+			return bufw.Flush()
+		},
+	}
+}
