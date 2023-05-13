@@ -1,9 +1,6 @@
 package bpm
 
 import (
-	"errors"
-	"log"
-	"strings"
 	"time"
 
 	"github.com/blobcache/glfs"
@@ -14,7 +11,6 @@ import (
 
 	"github.com/blobcache/bpm/bpmmd"
 	"github.com/blobcache/bpm/sources"
-	"github.com/blobcache/bpm/sources/github"
 )
 
 const MaxBlobSize = 1 << 21
@@ -27,13 +23,17 @@ func Hash(x []byte) cadata.ID {
 type (
 	Label    = bpmmd.Label
 	LabelSet = bpmmd.LabelSet
-	Query    = bpmmd.Query
 )
 
 type Asset struct {
-	ID     uint64   `json:"id"`
-	Labels LabelSet `json:"labels"`
-	Root   glfs.Ref `json:"root"`
+	ID       uint64       `json:"id"`
+	Labels   LabelSet     `json:"labels"`
+	Root     glfs.Ref     `json:"root"`
+	Upstream *UpstreamURL `json:"upstream"`
+}
+
+func (a Asset) IsLocal() bool {
+	return a.Upstream == nil
 }
 
 type Deploy struct {
@@ -52,27 +52,9 @@ type WebRefStore interface {
 	state.Getter[cadata.ID, webref.Ref]
 }
 
-// MakeSource creates a new source from a URL
-func MakeSource(x string) (sources.Source, error) {
-	sch, rest := splitScheme(x)
-	switch sch {
-	case "github":
-		log.Println("importing from github")
-		parts := strings.SplitN(rest, "/", 2)
-		return github.NewGitHubSource(parts[0], parts[1]), nil
-	default:
-		return nil, errors.New("unrecognized URL scheme")
-	}
-}
+type Manifest map[string]DeploySpec
 
-func splitScheme(x string) (scheme string, rest string) {
-	parts := strings.SplitN(x, ":", 2)
-	switch len(parts) {
-	case 1:
-		return parts[0], ""
-	case 2:
-		return parts[0], parts[1]
-	default:
-		return "", ""
-	}
+type DeploySpec struct {
+	Source sources.URL `json:"source"`
+	Query  string      `json:"query"`
 }

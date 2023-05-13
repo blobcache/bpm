@@ -16,13 +16,14 @@ import (
 	"github.com/blobcache/glfs/glfstar"
 	"github.com/blobcache/glfs/glfszip"
 	"github.com/brendoncarroll/go-state/cadata"
+	"github.com/brendoncarroll/go-state/streams"
 	"github.com/brendoncarroll/stdctx/logctx"
 	"github.com/google/go-github/v50/github"
 	"golang.org/x/mod/semver"
 	"golang.org/x/oauth2"
 
 	"github.com/blobcache/bpm/bpmmd"
-	"github.com/blobcache/bpm/internal/iter"
+	"github.com/blobcache/bpm/internal/streams2"
 	"github.com/blobcache/bpm/sources"
 )
 
@@ -63,12 +64,12 @@ func (s *GitHubSource) newClient(ctx context.Context) *github.Client {
 }
 
 const (
-	tagPrefix   = "git-tag/"
-	assetPrefix = "asset/"
+	tagPrefix   = "git-"
+	assetPrefix = "ra-"
 )
 
-// PullAsset writes the asset to the store, and returns the root
-func (s *GitHubSource) PullAsset(ctx context.Context, op *glfs.Operator, store cadata.Store, idstr string) (*glfs.Ref, error) {
+// Pull writes the asset to the store, and returns the root
+func (s *GitHubSource) Pull(ctx context.Context, op *glfs.Operator, store cadata.Store, idstr string) (*glfs.Ref, error) {
 	client := s.newClient(ctx)
 	switch {
 	case strings.HasPrefix(idstr, tagPrefix):
@@ -166,14 +167,14 @@ func download(ctx context.Context, target string) (io.ReadCloser, error) {
 	return res.Body, nil
 }
 
-func (s *GitHubSource) Search(ctx context.Context, q bpmmd.Query) (sources.ResultIterator, error) {
+func (s *GitHubSource) Fetch(ctx context.Context) (sources.AssetIterator, error) {
 	it1 := &relAssetIterator{
 		src: s,
 	}
 	it2 := &tagIterator{
 		src: s,
 	}
-	return iter.Concat[sources.Result](it1, it2), nil
+	return streams2.Concat[sources.RemoteAsset](it1, it2), nil
 }
 
 type relAssetIterator struct {
@@ -181,10 +182,10 @@ type relAssetIterator struct {
 
 	err         error
 	relNextPage int
-	results     []sources.Result
+	results     []sources.RemoteAsset
 }
 
-func (it *relAssetIterator) Next(ctx context.Context, r *sources.Result) error {
+func (it *relAssetIterator) Next(ctx context.Context, r *sources.RemoteAsset) error {
 	if it.err != nil {
 		return it.err
 	}
@@ -194,10 +195,10 @@ func (it *relAssetIterator) Next(ctx context.Context, r *sources.Result) error {
 			return err
 		}
 		if len(rels) == 0 {
-			it.err = iter.EOS()
+			it.err = streams.EOS()
 			return it.err
 		}
-		var results []sources.Result
+		var results []sources.RemoteAsset
 		for _, rel := range rels {
 			for _, ass := range rel.Assets {
 				labels := bpmmd.LabelSet{}
@@ -210,7 +211,7 @@ func (it *relAssetIterator) Next(ctx context.Context, r *sources.Result) error {
 				fuzzSemver(labels)
 				fuzzArch(labels)
 				fuzzOS(labels)
-				results = append(results, sources.Result{
+				results = append(results, sources.RemoteAsset{
 					ID:     assetPrefix + strconv.FormatInt(ass.GetID(), 10),
 					Labels: labels,
 				})
@@ -237,10 +238,10 @@ type tagIterator struct {
 
 	err      error
 	nextPage int
-	results  []sources.Result
+	results  []sources.RemoteAsset
 }
 
-func (it *tagIterator) Next(ctx context.Context, dst *sources.Result) error {
+func (it *tagIterator) Next(ctx context.Context, dst *sources.RemoteAsset) error {
 	if it.err != nil {
 		return it.err
 	}
@@ -250,10 +251,10 @@ func (it *tagIterator) Next(ctx context.Context, dst *sources.Result) error {
 			return err
 		}
 		if len(tags) == 0 {
-			it.err = iter.EOS()
+			it.err = streams.EOS()
 			return it.err
 		}
-		var results []sources.Result
+		var results []sources.RemoteAsset
 		for _, tag := range tags {
 			labels := bpmmd.LabelSet{}
 			if err := addTagLabels(labels, tag); err != nil {
@@ -262,7 +263,7 @@ func (it *tagIterator) Next(ctx context.Context, dst *sources.Result) error {
 			fuzzSemver(labels)
 			fuzzArch(labels)
 			fuzzOS(labels)
-			results = append(results, sources.Result{
+			results = append(results, sources.RemoteAsset{
 				ID:     tagPrefix + tag.GetName(),
 				Labels: labels,
 			})

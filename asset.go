@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"runtime"
 
-	"github.com/blobcache/bpm/bpmmd"
 	"github.com/blobcache/bpm/internal/dbutil"
 	"github.com/blobcache/bpm/internal/slices2"
 	"github.com/blobcache/bpm/internal/sqlstores"
@@ -76,6 +75,12 @@ func (r *Repo) GetLabels(ctx context.Context, aid uint64) ([]Label, error) {
 	})
 }
 
+func (r *Repo) GetAsset(ctx context.Context, aid uint64) (Asset, error) {
+	return dbutil.DoTx1(ctx, r.db, func(tx *sqlx.Tx) (Asset, error) {
+		return getAsset(tx, aid)
+	})
+}
+
 func (r *Repo) ListAssets(ctx context.Context, span state.Span[uint64], limit int) ([]uint64, error) {
 	return dbutil.List(ctx, r.db, `SELECT id FROM assets`, "id", dbutil.ListParams[uint64]{
 		Span: span,
@@ -93,56 +98,37 @@ func (r *Repo) ListAssetsFull(ctx context.Context, span state.Span[uint64], limi
 	}
 	sem := semaphore.NewWeighted(10)
 	return slices2.ParMapErr(ctx, sem, ids, func(ctx context.Context, id uint64) (Asset, error) {
-		ref, err := dbutil.DoTx1(ctx, r.db, func(tx *sqlx.Tx) (*glfs.Ref, error) {
-			return getAssetRef(tx, id)
+		return dbutil.DoTx1(ctx, r.db, func(tx *sqlx.Tx) (Asset, error) {
+			return getAsset(tx, id)
 		})
-		if err != nil {
-			return Asset{}, err
-		}
-		ls, err := dbutil.DoTx1(ctx, r.db, func(tx *sqlx.Tx) (LabelSet, error) { return getLabelSet(tx, id) })
-		if err != nil {
-			return Asset{}, err
-		}
-		return Asset{
-			ID:     id,
-			Root:   *ref,
-			Labels: ls,
-		}, nil
 	})
-}
-func (r *Repo) QueryAssets(ctx context.Context, q bpmmd.Query) ([]uint64, error) {
-	return nil, nil
-}
-
-// PullAsset pulls a new asset from a source
-func (r *Repo) PullAsset(ctx context.Context, srcURL string, assetID string) (uint64, error) {
-	src, err := MakeSource(srcURL)
-	if err != nil {
-		return 0, err
-	}
-	aid, err := r.CreateAsset(ctx)
-	if err != nil {
-		return 0, err
-	}
-	sid, err := dbutil.DoTx1(ctx, r.db, func(tx *sqlx.Tx) (uint64, error) { return getAssetStore(tx, aid) })
-	if err != nil {
-		return 0, err
-	}
-	s := sqlstores.NewStore(r.db, Hash, MaxBlobSize, sid)
-	ref, err := src.PullAsset(ctx, &r.glfsOp, s, assetID)
-	if err != nil {
-		return 0, err
-	}
-	if err := dbutil.DoTx(ctx, r.db, func(tx *sqlx.Tx) error { return putAssetRef(tx, aid, *ref) }); err != nil {
-		return 0, err
-	}
-	return aid, nil
 }
 
 func createAsset(tx *sqlx.Tx, storeID uint64) (uint64, error) {
 	var aid uint64
 	err := tx.Get(&aid, `INSERT INTO assets (store_id) VALUES (?) RETURNING id`, storeID)
 	return aid, err
+}
+
+func getAsset(tx *sqlx.Tx, id uint64) (Asset, error) {
+	ref, err := getAssetRef(tx, id)
+	if err != nil {
+		return Asset{}, err
+	}
+	ls, err := getLabelSet(tx, id)
+	if err != nil {
+		return Asset{}, err
+	}
+	us, err := lookupUpstream(tx, id)
+	if err != nil {
+		return Asset{}, err
+	}
+	return Asset{
+		ID:       id,
+		Root:     *ref,
+		Labels:   ls,
+		Upstream: us,
+	}, nil
 }
 
 func getAssetStore(tx *sqlx.Tx, aid uint64) (ret uint64, _ error) {
@@ -186,4 +172,14 @@ func getLabelSet(tx *sqlx.Tx, aid uint64) (LabelSet, error) {
 		ls[row.Key] = row.Value
 	}
 	return ls, nil
+}
+
+// putLabelSet
+func putLabelSet(tx *sqlx.Tx, aid uint64, labels LabelSet) error {
+	for k, v := range labels {
+		if _, err := tx.Exec(`INSERT OR REPLACE INTO asset_labels (asset_id, k, v) VALUES (?, ?, ?)`, aid, k, v); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/blobcache/bpm"
-	"github.com/blobcache/bpm/bpmmd"
-	"github.com/blobcache/bpm/internal/iter"
 	"github.com/blobcache/bpm/sources"
 )
 
@@ -31,6 +29,8 @@ func NewCmd(ctx context.Context) *cobra.Command {
 		newInitCmd(ctx),
 		newStatusCmd(ctx),
 
+		newFetchCmd(ctx),
+		newFetchAllCmd(ctx),
 		newSearchCmd(ctx),
 		newInstallCmd(ctx),
 		newGetCmd(ctx),
@@ -95,9 +95,12 @@ func newGetCmd(ctx context.Context) *cobra.Command {
 			return loadRepo(ctx, p)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			sourceURL := args[0]
+			sourceURL, err := sources.ParseURL(args[0])
+			if err != nil {
+				return err
+			}
 			idstr := args[1]
-			aid, err := repo.PullAsset(ctx, sourceURL, idstr)
+			aid, err := repo.Pull(ctx, *sourceURL, idstr)
 			if err != nil {
 				return err
 			}
@@ -118,9 +121,13 @@ func newInstallCmd(ctx context.Context) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := args[0]
-			sourceURL := args[1]
+			sourceURL, err := sources.ParseURL(args[1])
+			if err != nil {
+				return err
+			}
 			idstr := args[2]
-			assetID, err := repo.PullAsset(ctx, sourceURL, idstr)
+
+			assetID, err := repo.Pull(ctx, *sourceURL, idstr)
 			if err != nil {
 				return err
 			}
@@ -167,41 +174,4 @@ func getRepoPath() string {
 		return "./" // current directory
 	}
 	return filepath.Join(homeDir, "pkg")
-}
-
-func newSearchCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:   "search",
-		Short: "search for a package",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			var src sources.Source
-			if len(args) > 0 {
-				var err error
-				src, err = bpm.MakeSource(args[0])
-				if err != nil {
-					return err
-				}
-			} else {
-				src = repo.LocalSource()
-			}
-			it, err := src.Search(ctx, bpm.Query{})
-			if err != nil {
-				return err
-			}
-			var q bpmmd.Query
-			it = iter.NewFilter(it, func(r *sources.Result) bool {
-				return q.Where.Matches(r.Labels)
-			})
-			bufw := bufio.NewWriter(cmd.OutOrStdout())
-			fmtStr := "%-20s %s\n"
-			fmt.Fprintf(bufw, fmtStr, "ID", "LABELS")
-			if err := iter.ForEachBuf(ctx, it, 1000, func(x *sources.Result) error {
-				_, err := fmt.Fprintf(bufw, fmtStr, x.ID, x.Labels)
-				return err
-			}); err != nil {
-				return err
-			}
-			return bufw.Flush()
-		},
-	}
 }

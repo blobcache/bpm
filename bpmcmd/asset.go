@@ -21,10 +21,14 @@ func newAssetCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 			bufw := bufio.NewWriter(cmd.OutOrStdout())
-			fmtStr := "%-8v %-6v %-12v %v\n"
-			fmt.Fprintf(bufw, fmtStr, "ID", "TYPE", "SIZE", "CID")
+			fmtStr := "%-8v %-40v %-6v %-12v %v\n"
+			fmt.Fprintf(bufw, fmtStr, "ID", "UPSTREAM", "TYPE", "SIZE", "CID")
 			for _, a := range as {
-				fmt.Fprintf(bufw, fmtStr, a.ID, a.Root.Type, a.Root.Size, a.Root.CID.String())
+				var ustr string
+				if a.Upstream != nil {
+					ustr = a.Upstream.String()
+				}
+				fmt.Fprintf(bufw, fmtStr, a.ID, ustr, a.Root.Type, a.Root.Size, a.Root.CID.String())
 			}
 			return bufw.Flush()
 		},
