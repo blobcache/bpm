@@ -35,8 +35,18 @@ If you ever want to uninstall bpm without leaving anything behind, you can remov
 Search is used to search a source for packages
 
 ```
-$ bpm search github:protocolbuffers/protobuf -w v>fasdl
+$ bpm search --fetch github:protocolbuffers/protobuf '.git_tag > v0.0.5'
 ```
+
+The fetch flag will access the remote over the network.
+It is necessary to pass `--fetch` the first time a source is accessed.
+By default, `bpm search` only accesses the local filesystem, not the network.
+
+The first argument to `bpm search` is the source URL.
+The second argument is an option query, using the jq language.
+The query must resolve to a boolean.
+If the boolean is true, then the result is included.
+
 
 ### Install
 ```

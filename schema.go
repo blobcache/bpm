@@ -25,7 +25,17 @@ var schema = func() *migrations.State {
 		
 		PRIMARY KEY(asset_id, k)
 	)`)
-	// TODO: inverted index
+	x = x.ApplyStmt(`CREATE INDEX asset_labels_idx_kv ON asset_labels (k, v, asset_id)`)
+
+	x = x.ApplyStmt(`CREATE TABLE upstreams (
+		scheme TEXT NOT NULL,
+		path TEXT NOT NULL,
+		remote_id TEXT NOT NULL,
+		asset_id INTEGER NOT NULL REFERENCES assets(id),
+
+		PRIMARY KEY(scheme, path, remote_id)
+	)`)
+	x = x.ApplyStmt(`CREATE INDEX upstream_idx_asset ON upstreams (asset_id, scheme, path, remote_id)`)
 
 	x = x.ApplyStmt(`CREATE TABLE deploys (
 		id INTEGER NOT NULL,
@@ -50,6 +60,7 @@ var schema = func() *migrations.State {
 		
 		PRIMARY KEY(blob_id, ref)
 	)`)
+
 	return x
 }()
 
