@@ -45,6 +45,7 @@ func (s *HTTPScraper) Fetch(ctx context.Context) (sources.AssetIterator, error) 
 			return
 		}
 		id := strings.TrimPrefix(link, s.target.String())
+		id = strings.Trim(id, "/")
 
 		assets = append(assets, sources.RemoteAsset{
 			ID: id,

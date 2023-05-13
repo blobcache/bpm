@@ -213,6 +213,9 @@ func lookupUpstream(tx *sqlx.Tx, aid uint64) (*UpstreamURL, error) {
 		RemoteID string `db:"remote_id"`
 	}
 	if err := tx.Get(&row, `SELECT scheme, path, remote_id FROM upstreams WHERE asset_id = ?`, aid); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &UpstreamURL{

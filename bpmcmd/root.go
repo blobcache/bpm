@@ -37,7 +37,7 @@ func NewCmd(ctx context.Context) *cobra.Command {
 
 		// type specific
 		newAssetCmd(ctx),
-		newDeployCmd(ctx),
+		newSnapshotCmd(ctx),
 	} {
 		c.AddCommand(child)
 	}
@@ -106,50 +106,6 @@ func newGetCmd(ctx context.Context) *cobra.Command {
 			}
 			_, err = fmt.Fprintln(cmd.OutOrStdout(), aid)
 			return err
-		},
-	}
-}
-
-func newInstallCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:   "install <name>",
-		Short: "install takes a source and query, resolves it to a package and then deploys it",
-		Args:  cobra.ExactArgs(3),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			p := getRepoPath()
-			return loadRepo(ctx, p)
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			path := args[0]
-			sourceURL, err := sources.ParseURL(args[1])
-			if err != nil {
-				return err
-			}
-			idstr := args[2]
-
-			assetID, err := repo.Pull(ctx, *sourceURL, idstr)
-			if err != nil {
-				return err
-			}
-
-			current, err := repo.GetDeploy(ctx, 0)
-			if err != nil {
-				return err
-			}
-			assets := map[string]uint64{}
-			if current != nil {
-				for p, a := range current.Assets {
-					assets[p] = a.ID
-				}
-			}
-			assets[path] = assetID
-
-			did, err := repo.Deploy(ctx, assets)
-			if err != nil {
-				return err
-			}
-			fmt.Println(did)
-			return nil
 		},
 	}
 }

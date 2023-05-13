@@ -18,6 +18,7 @@ var schema = func() *migrations.State {
 
 		PRIMARY KEY(id)
 	)`)
+	x = x.ApplyStmt(`CREATE INDEX asset_root_idx ON assets (root, id)`)
 	x = x.ApplyStmt(`CREATE TABLE asset_labels (
 		asset_id INTEGER REFERENCES assets(id), 
 		k TEXT,
@@ -37,21 +38,34 @@ var schema = func() *migrations.State {
 	)`)
 	x = x.ApplyStmt(`CREATE INDEX upstream_idx_asset ON upstreams (asset_id, scheme, path, remote_id)`)
 
-	x = x.ApplyStmt(`CREATE TABLE deploys (
+	x = x.ApplyStmt(`CREATE TABLE snapshots (
 		id INTEGER NOT NULL,
-
-		created_at TIMESTAMP NOT NULL,
-		teardown_at TIMESTAMP,
-
+		cid BLOB NOT NULL,
+	
+		UNIQUE (cid),
 		PRIMARY KEY (id)
 	)`)
-	x = x.ApplyStmt(`CREATE TABLE deploy_items (
-		deploy_id INTEGER NOT NULL REFERENCES deploys(id),
+	x = x.ApplyStmt(`CREATE TABLE snapshot_tlds (
+		snapshot_id INTEGER NOT NULL REFERENCES snapshots(id),
 		path TEXT NOT NULL,
+		root BLOB NOT NULL REFERENCES assets(root),	
 
-		asset_id INTEGER NOT NULL REFERENCES assets(id),
+		PRIMARY KEY(snapshot_id, path)
+	)`)
 
-		PRIMARY KEY(deploy_id, path)
+	x = x.ApplyStmt(`CREATE TABLE commits (
+		id INTEGER NOT NULL,
+		snapshot_id INTEGER NOT NULL REFERENCES snapshots(id),
+		created_at TIMESTAMP NOT NULL,
+
+		PRIMARY KEY(id)
+	)`)
+
+	x = x.ApplyStmt(`CREATE TABLE fs_cache (
+		path TEXT NOT NULL,
+		mtime INTEGER NOT NULL,
+		root BLOB NOT NULL,
+		PRIMARY KEY(path)
 	)`)
 
 	x = x.ApplyStmt(`CREATE TABLE webrefs (
