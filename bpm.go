@@ -1,8 +1,6 @@
 package bpm
 
 import (
-	"time"
-
 	"github.com/blobcache/glfs"
 	"github.com/blobcache/webref"
 	"github.com/brendoncarroll/go-state"
@@ -34,17 +32,6 @@ type Asset struct {
 
 func (a Asset) IsLocal() bool {
 	return a.Upstream == nil
-}
-
-type Deploy struct {
-	ID         uint64           `json:"id"`
-	Assets     map[string]Asset `json:"assets"`
-	CreatedAt  time.Time        `json:"created_at"`
-	TeardownAt *time.Time       `json:"teardown_at"`
-}
-
-func (d Deploy) IsActive() bool {
-	return d.TeardownAt == nil
 }
 
 type WebRefStore interface {

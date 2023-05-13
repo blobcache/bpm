@@ -183,3 +183,13 @@ func putLabelSet(tx *sqlx.Tx, aid uint64, labels LabelSet) error {
 	}
 	return nil
 }
+
+func lookupAssetByRoot(tx *sqlx.Tx, root glfs.Ref) (uint64, error) {
+	data, err := json.Marshal(root)
+	if err != nil {
+		return 0, err
+	}
+	var aid uint64
+	err = tx.Get(&aid, `SELECT id FROM assets WHERE root = ?`, data)
+	return aid, err
+}

@@ -1,9 +1,10 @@
-# bpm is a Package Manager
+# bpm is a package manager
 
-- bpm manages deploying files and trees of files, which it calls *Assets* to target paths in the filesystem, which it calls *Deployments*.
+- bpm manages deploying files and trees of files, which it calls *Assets* to target paths in the filesystem.
 - bpm stores state in a single directory, which can be configured with the environment variable `BPM_PATH`. This defaults to `$HOME/pkg`.
 - *Assets* are labeled with key value pairs, called *Labels*.  *Assets* can be searched for by label.
-- bpm knows about external *Sources* of assets which you can query with `bpm search`
+- bpm knows about external *Sources* of assets which you can query with `bpm search`.
+- bpm keeps track of all the assets deployed at given time as a *Snapshot*.
 
 For more information check out the [docs](./doc/00_BPM.md)
 
