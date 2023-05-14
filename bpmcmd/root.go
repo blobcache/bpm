@@ -33,6 +33,7 @@ func NewCmd(ctx context.Context) *cobra.Command {
 		newFetchAllCmd(ctx),
 		newSearchCmd(ctx),
 		newInstallCmd(ctx),
+		newRemoveCmd(ctx),
 		newGetCmd(ctx),
 
 		// type specific
