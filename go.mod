@@ -6,7 +6,7 @@ require (
 	github.com/blobcache/glfs v0.0.0-20230402152202-ca7f4b338c87
 	github.com/blobcache/webref v0.0.0-20220721200854-3984f8122fe5
 	github.com/brendoncarroll/go-exp v0.0.0-20230603171029-dab04b5d8918
-	github.com/brendoncarroll/go-state v0.0.0-20230513140739-57667e926637
+	github.com/brendoncarroll/go-state v0.0.0-20230603163727-234f9bec78f5
 	github.com/brendoncarroll/stdctx v0.0.0-20230325181752-a8a6ba46e3c1
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/go-github/v50 v50.2.0

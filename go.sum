@@ -21,8 +21,8 @@ github.com/blobcache/webref v0.0.0-20220721200854-3984f8122fe5 h1:PUSIeiduyCrzRy
 github.com/blobcache/webref v0.0.0-20220721200854-3984f8122fe5/go.mod h1:ak1hSvPQolwXjktZJyNrAHO1ItwqaXymd8wF2by+qAg=
 github.com/brendoncarroll/go-exp v0.0.0-20230603171029-dab04b5d8918 h1:Xo4CYpaCMt6fZBFdAYPTxJvNYujzWaj0YzurPNVXD4I=
 github.com/brendoncarroll/go-exp v0.0.0-20230603171029-dab04b5d8918/go.mod h1:BPjzn0WdcldzxIbDJORj8sDsUlHI7KB7bwGFq4aN6Fk=
-github.com/brendoncarroll/go-state v0.0.0-20230513140739-57667e926637 h1:0pWgSKLmv6q6BH4TDugtCBN+ZpBi3mHvuZ9QhspAOuw=
-github.com/brendoncarroll/go-state v0.0.0-20230513140739-57667e926637/go.mod h1:WXHBIIgecO9a1ofTqA/NXNRi02p7aIDTBsmdOju04/4=
+github.com/brendoncarroll/go-state v0.0.0-20230603163727-234f9bec78f5 h1:Cg9py22FQuYwIKoWyGw0BSf5J9WiZVPH3PPtW31KcN4=
+github.com/brendoncarroll/go-state v0.0.0-20230603163727-234f9bec78f5/go.mod h1:WXHBIIgecO9a1ofTqA/NXNRi02p7aIDTBsmdOju04/4=
 github.com/brendoncarroll/go-tai64 v0.0.0-20220726191612-c9e9c0704db4 h1:yw9nUqzIq1Tj0txVls6R0KQnrWXW67nZja/q0TFYWaw=
 github.com/brendoncarroll/go-tai64 v0.0.0-20220726191612-c9e9c0704db4/go.mod h1:E9+Qr3YRBlU8HsajHzdoyHAm8XRqITZrtsh1gZSzu+4=
 github.com/brendoncarroll/stdctx v0.0.0-20230325181752-a8a6ba46e3c1 h1:E0YZnMY5eYKg2e1F71ePVBkZz3gkpb2RVmykwQGc9C4=
