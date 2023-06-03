@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/blobcache/glfs"
+	"github.com/brendoncarroll/go-exp/streams"
 	"github.com/brendoncarroll/go-state/cadata"
-	"github.com/brendoncarroll/go-state/streams"
 
 	"github.com/blobcache/bpm/bpmmd"
 )

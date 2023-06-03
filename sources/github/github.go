@@ -15,15 +15,14 @@ import (
 	"github.com/blobcache/glfs"
 	"github.com/blobcache/glfs/glfstar"
 	"github.com/blobcache/glfs/glfszip"
+	"github.com/brendoncarroll/go-exp/streams"
 	"github.com/brendoncarroll/go-state/cadata"
-	"github.com/brendoncarroll/go-state/streams"
 	"github.com/brendoncarroll/stdctx/logctx"
 	"github.com/google/go-github/v50/github"
 	"golang.org/x/mod/semver"
 	"golang.org/x/oauth2"
 
 	"github.com/blobcache/bpm/bpmmd"
-	"github.com/blobcache/bpm/internal/streams2"
 	"github.com/blobcache/bpm/sources"
 )
 
@@ -174,7 +173,7 @@ func (s *GitHubSource) Fetch(ctx context.Context) (sources.AssetIterator, error)
 	it2 := &tagIterator{
 		src: s,
 	}
-	return streams2.Concat[sources.RemoteAsset](it1, it2), nil
+	return streams.Concat[sources.RemoteAsset](it1, it2), nil
 }
 
 type relAssetIterator struct {

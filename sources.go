@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brendoncarroll/go-state/streams"
+	"github.com/brendoncarroll/go-exp/streams"
 	"github.com/brendoncarroll/stdctx/logctx"
 	"github.com/itchyny/gojq"
 	"github.com/jmoiron/sqlx"

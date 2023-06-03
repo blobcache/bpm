@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brendoncarroll/go-state/streams"
+	"github.com/brendoncarroll/go-exp/streams"
 	"github.com/itchyny/gojq"
 	"golang.org/x/exp/maps"
 )

@@ -3,7 +3,7 @@ package streams2
 import (
 	"context"
 
-	"github.com/brendoncarroll/go-state/streams"
+	"github.com/brendoncarroll/go-exp/streams"
 )
 
 type Mapper[A, B any] struct {

@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/blobcache/glfs v0.0.0-20230402152202-ca7f4b338c87
 	github.com/blobcache/webref v0.0.0-20220721200854-3984f8122fe5
+	github.com/brendoncarroll/go-exp v0.0.0-20230603171029-dab04b5d8918
 	github.com/brendoncarroll/go-state v0.0.0-20230513140739-57667e926637
 	github.com/brendoncarroll/stdctx v0.0.0-20230325181752-a8a6ba46e3c1
 	github.com/gocolly/colly/v2 v2.1.0
@@ -15,7 +16,7 @@ require (
 	github.com/owlmessenger/owl v0.0.0-20221112191537-b16ab01d1dc9
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.6.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.24.0
 	golang.org/x/mod v0.8.0
 	golang.org/x/oauth2 v0.6.0
@@ -34,7 +35,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 )
 
 require (
@@ -54,11 +55,11 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/exp v0.0.0-20221023144134-a1e5550cf13e
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sync v0.2.0
+	golang.org/x/sys v0.8.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
